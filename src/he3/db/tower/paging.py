@@ -487,3 +487,56 @@ class PagedQuery(object):
 
 	id = property(fget=_get_query_id, doc='unique id of this query')
 
+
+class PageLinks:
+	'''This is an object representing a list of hyperlinks to a set of
+	pages.
+	'''
+	
+	def __init__(self, page, page_count, url_root, page_field):
+		'''intialises the PageLinks object with the information required
+		to generate the page link set
+		@param page: The current page
+		@param page_count: The total number of pages
+		@param url_root: The start of the URL assigned to each page.
+		@param page_field: The name of the URL parameter to use for pages
+		'''
+		
+		self.page = page
+		self.page_count = page_count
+		self.url_root = url_root
+		self.page_field = page_field
+		
+	def get_links(self):
+		'''uses the initialisation information to return a list of links
+		@return: A list of text and url pairs
+		'''
+		#create the appropriate page range to show
+		if self.page < 6: 
+			pages = range(1, self.page_count + 1 if self.page_count < 10 else 11)
+		else:
+			pages = range(self.page - 5, self.page_count + 1 if self.page_count < (self.page + 5) else (self.page +6))
+		
+		#determine whether parameters are already present in URL and set first 
+		#symbol appropriately.
+		first_symbol = '&' if self.url_root.count('?') else '?'
+		
+
+		#use page range to construct list
+		page_links =\
+			[(str(p),'%s%s%s=%d' % (self.url_root, first_symbol,self.page_field,p)) for p in pages]
+
+		#add a prev link if required
+		if self.page > 1:
+			prev_link  = ('Prev', '%s%s%s=%d' % 
+						(self.url_root, first_symbol, self.page_field, self.page - 1) )
+			page_links.insert(0,prev_link)
+		
+		#add a next link if required
+		if self.page < self.page_count:
+			next_link = ('Next', '%s%s%s=%d' % 
+						(self.url_root, first_symbol, self.page_field, self.page + 1) )
+			page_links.append(next_link)
+		
+		return page_links
+				
