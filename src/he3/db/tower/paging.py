@@ -201,6 +201,21 @@ class PagedQuery(object):
 			self._num_count_calls += 1
 		return self._page_count 
 				
+	def has_page(self, page_number):
+		'''Returns True if the requested page exists for the current 
+		PagedQuery object. Note that calling this method for a page at or below 
+		that for whose page has already been fetched is cheaper performance-
+		wise than calling it for a page not yet visited. Of course, if another
+		action causes a full count() of the query then this action is cheap 
+		regardless.
+		@param page_number: Page number to test the existence of
+		@return: True of false depending on whether the page exists. ie
+		has_page(n) == len(fetch_page(n)) > 0'''
+		
+		#we might be able to avoid an unneccesary query.count() if we can see
+		#a cursor already exists for page-number or a higher page.
+		
+		return len(self._page_cursors) > page_number or page_number <= self.page_count()
 
 	def fetch(self, limit, offset=0):
 		''' executes query against datastore as per db.Query.fetch()

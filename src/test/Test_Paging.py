@@ -691,6 +691,64 @@ class PagedQueryTest(GAETestCase):
 		self.assertTrue(q1_hash != q2_hash)
 		self.assertTrue(q1_str != q2_str)		
 
+	def test_has_page(self):
+		'''Tests the has_page() method'''
+		
+		self.assertTrue(self.pagedQuery.has_page(1) == True)
+		self.assertTrue(self.pagedQuery.has_page(3) == True)
+		self.assertTrue(self.pagedQuery.has_page(4) == False)
+		self.assertTrue(self.pagedQuery.has_page(10) == False)
+		
+		self.assertTrue(self.pagedGqlQuery.has_page(1) == True)
+		self.assertTrue(self.pagedGqlQuery.has_page(3) == True)
+		self.assertTrue(self.pagedGqlQuery.has_page(4) == False)
+		self.assertTrue(self.pagedGqlQuery.has_page(10) == False)
+		
+	def test_has_page_performance(self):
+		'''Test the operating characteristics of has_page(), in particular
+		where a full page_count is called'''
+		
+		#Test for page 1 - page count should be called
+		page_count = self.pagedQuery._num_count_calls
+		logging.info(page_count)
+		hp1 = self.pagedQuery.has_page(1)
+		logging.info(self.pagedQuery._num_count_calls)
+		self.assertTrue(page_count + 1 == self.pagedQuery._num_count_calls)
+		
+		#Test after fetching page 3 - page count should not be called for
+		#has_page(3) (already called)
+		people = self.pagedQuery.fetch_page(3)
+		page_count = self.pagedQuery._num_count_calls
+		hp1 = self.pagedQuery.has_page(3)
+		self.assertTrue(page_count == self.pagedQuery._num_count_calls)		
+		
+		#test has_page(10) - we expect page_count not to be called since it has 
+		#already been called 
+		page_count = self.pagedQuery._num_count_calls
+		hp1 = self.pagedQuery.has_page(10)
+		self.assertTrue(page_count  == self.pagedQuery._num_count_calls)		
+
+		self.pagedQuery.clear()
+		
+		#Test after fetching page 3 - page count should not be called for
+		#has_page(3) (cursor exists)
+		people = self.pagedQuery.fetch_page(1)
+		people = self.pagedQuery.fetch_page(2)
+		people = self.pagedQuery.fetch_page(3)
+		page_count = self.pagedQuery._num_count_calls
+		hp1 = self.pagedQuery.has_page(3)
+		self.assertTrue(page_count == self.pagedQuery._num_count_calls)		
+		
+		#test has_page(4) - we expect page_count to be called since a cursor
+		#does not exist and page count should not already have been called.
+		#NB - offset bug meant not sequential page fetches would cause a page_count()
+		#which would ruin this test.
+		page_count = self.pagedQuery._num_count_calls
+		#logging.info(page_count)
+		hp1 = self.pagedQuery.has_page(4)
+		#logging.info(self.pagedQuery._num_count_calls)
+		self.assertTrue(page_count + 1 == self.pagedQuery._num_count_calls)		
+
 	def util_test_cursor_set(self, cursors):
 		'''utility function to test a set of cursors for validity'''
 		
@@ -704,6 +762,7 @@ class PagedQueryTest(GAETestCase):
 		'''creates a new pagedQuery object for all PersonTestEntities
 		with Warwick entity as ancestor (includes Warwick)'''
 		return PagedQuery(PersonTestEntity.all().ancestor(self.warwick),2)
+	
 	
 	def util_create_persons_GQL_pagedQuery(self):
 		'''creates a new pagedQuery object for all PersonTestEntities
