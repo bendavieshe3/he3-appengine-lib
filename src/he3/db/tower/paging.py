@@ -508,29 +508,38 @@ class PageLinks:
 	pages.
 	'''
 	
-	def __init__(self, page, page_count, url_root, page_field):
+	def __init__(self, page, page_count, url_root, page_field, page_range= 10):
 		'''intialises the PageLinks object with the information required
 		to generate the page link set
 		@param page: The current page
 		@param page_count: The total number of pages
 		@param url_root: The start of the URL assigned to each page.
 		@param page_field: The name of the URL parameter to use for pages
+		@param page_range: number of pages in total to show, excluding previous
+		, next and current page. rounded down for odd numbers. Must be positive
+		and non-zero.
 		'''
 		
 		self.page = page
 		self.page_count = page_count
 		self.url_root = url_root
 		self.page_field = page_field
+		self.page_range = page_range
 		
 	def get_links(self):
 		'''uses the initialisation information to return a list of links
 		@return: A list of text and url pairs
 		'''
+		#find the number of items to show either side (if possible)
+		i_side_range = self.page_range//2
 		#create the appropriate page range to show
-		if self.page < 6: 
-			pages = range(1, self.page_count + 1 if self.page_count < 10 else 11)
+		if self.page < i_side_range + 1: 
+			pages = range(1, 
+				self.page_count + 1 if self.page_count < (2*i_side_range) else (2*i_side_range)+1)
 		else:
-			pages = range(self.page - 5, self.page_count + 1 if self.page_count < (self.page + 5) else (self.page +6))
+			pages = range(self.page - i_side_range
+				, self.page_count + 1 if self.page_count < (self.page + i_side_range) 
+				else (self.page + i_side_range + 1))
 		
 		#determine whether parameters are already present in URL and set first 
 		#symbol appropriately.

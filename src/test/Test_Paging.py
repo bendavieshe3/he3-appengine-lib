@@ -2,7 +2,7 @@ import logging
 import google.appengine.ext.db as db
 
 from datetime import date
-from he3.db.tower.paging import PagedQuery
+from he3.db.tower.paging import PagedQuery, PageLinks
 from gaeunit import GAETestCase
 	
 class PagedQueryTest(GAETestCase):
@@ -825,5 +825,83 @@ class PersonTestEntity(db.Model):
 	name = db.StringProperty(required=True)
 	birthdate = db.DateProperty(default=None)
 	created = db.DateTimeProperty(auto_now_add=True)
-	modified = db.DateTimeProperty(auto_now=True)	
+	modified = db.DateTimeProperty(auto_now=True)
+	
+	
+class PageLinksTest(GAETestCase):
+	'''Contains tests for the utilities.db.pages.PageLinks class'''
+	
+	def test_small_page_count(self):
+		
+		#test with default size
+		pageLinks = PageLinks(2,3,'/blah', 'page')
+		
+		myLinks = pageLinks.get_links()
+		self.assertTrue(len(myLinks) == 5)
+		
+		#test with different size
+		pageLinks = PageLinks(2,3,'/blah', 'page',3)
+		
+		myLinks = pageLinks.get_links()
+		self.assertTrue(len(myLinks) == 5)
+		
+		#test with different size
+		pageLinks = PageLinks(2,3,'/blah', 'page',20)
+		
+		myLinks = pageLinks.get_links()
+		self.assertTrue(len(myLinks) == 5)		
+		
+	def test_large_page_count(self):
+		#test with default size
+		pageLinks = PageLinks(2,30,'/blah', 'page')
+		
+		myLinks = pageLinks.get_links()
+		self.assertTrue(len(myLinks) == 12) #ten page + 2
+		
+		#test with custom size
+		pageLinks = PageLinks(2,30,'/blah', 'page',6)		
+		myLinks = pageLinks.get_links()
+		self.assertTrue(len(myLinks) == 8) #ten page + 2
+		
+		#test with first page
+		pageLinks = PageLinks(1,30,'/blah', 'page',6)
+		myLinks = pageLinks.get_links()
+		self.assertTrue(len(myLinks) == 7) #6 pages + 1
+		
+		#test with last page
+		pageLinks = PageLinks(30,30,'/blah', 'page',6)
+		myLinks = pageLinks.get_links()
+		self.assertTrue(len(myLinks) == 5) #4 pages + 1
+
+	def test_with_one_page(self):
+		#test with default size
+		pageLinks = PageLinks(1,1,'/blah', 'page')
+		
+		myLinks = pageLinks.get_links()
+		logging.info(myLinks)		
+		self.assertTrue(len(myLinks) == 1) 
+		
+		#test with custom size
+		pageLinks = PageLinks(1,1,'/blah', 'page',6)		
+		myLinks = pageLinks.get_links()
+		self.assertTrue(len(myLinks) == 1)
+		
+	def test_with_question_mark_exists(self):
+		#test with default size
+		pageLinks = PageLinks(1,1,'/blah?foo=23', 'page')
+		
+		myLinks = pageLinks.get_links()	
+		self.assertTrue(myLinks[0][1].count('?') == 1)
+		self.assertTrue(myLinks[0][1].count('&') == 1) 
+
+		
+	def test_without_question_mark_exists(self):
+		#test with default size
+		pageLinks = PageLinks(1,1,'/blah', 'page')
+		
+		myLinks = pageLinks.get_links()
+		self.assertTrue(myLinks[0][1].count('?') == 1)
+		self.assertTrue(myLinks[0][1].count('&') == 0) 
+		
+	
 	
