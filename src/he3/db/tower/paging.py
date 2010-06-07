@@ -215,7 +215,7 @@ class PagedQuery(object):
 		#we might be able to avoid an unneccesary query.count() if we can see
 		#a cursor already exists for page-number or a higher page.
 		
-		return len(self._page_cursors) > page_number or page_number <= self.page_count()
+		return page_number > 0 and (len(self._page_cursors) > page_number or page_number <= self.page_count())
 
 	def fetch(self, limit, offset=0):
 		''' executes query against datastore as per db.Query.fetch()

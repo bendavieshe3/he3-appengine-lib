@@ -694,11 +694,13 @@ class PagedQueryTest(GAETestCase):
 	def test_has_page(self):
 		'''Tests the has_page() method'''
 		
+		self.assertTrue(self.pagedQuery.has_page(0) == False)
 		self.assertTrue(self.pagedQuery.has_page(1) == True)
 		self.assertTrue(self.pagedQuery.has_page(3) == True)
 		self.assertTrue(self.pagedQuery.has_page(4) == False)
 		self.assertTrue(self.pagedQuery.has_page(10) == False)
 		
+		self.assertTrue(self.pagedGqlQuery.has_page(0) == False)
 		self.assertTrue(self.pagedGqlQuery.has_page(1) == True)
 		self.assertTrue(self.pagedGqlQuery.has_page(3) == True)
 		self.assertTrue(self.pagedGqlQuery.has_page(4) == False)
