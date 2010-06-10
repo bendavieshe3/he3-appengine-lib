@@ -155,7 +155,7 @@ class PagedQuery(object):
 			
 			#if we can not use a cursor, we need to use the offset method
 			#the offset method errors if it is out of range. Therefore:
-			if page_number > 1 and page_number > self.page_count(): return []
+			#if page_number > 1 and page_number > self.page_count(): return []
 			
 			self._query.with_cursor(None)			
 			offset = (self.page_size * (page_number -1))

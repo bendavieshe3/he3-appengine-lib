@@ -291,6 +291,7 @@ class PagedQueryTest(GAETestCase):
 		persons = self.pagedQuery.fetch_page(4)
 		self.assertTrue(len(persons)==0)
 		#should not use offset query since we already know there is no page 4
+		#note the above line is no longer true now that a page_count has been avoided.
 		
 		persons = self.pagedGqlQuery.fetch_page(4)
 		self.assertTrue(len(persons)==0)
@@ -307,7 +308,9 @@ class PagedQueryTest(GAETestCase):
 		self.assertTrue(persons[0].name == 'Colleen')
 		self.assertTrue(persons[1].name == 'Kate')	
 		
-		self.assertTrue(offset_query_count + 1 == self.pagedQuery._num_offset_queries)
+		logging.info(offset_query_count)
+		logging.info(self.pagedQuery._num_offset_queries)
+		self.assertTrue(offset_query_count + 2 == self.pagedQuery._num_offset_queries)
 							
 	
 	def test_clear(self):
@@ -351,7 +354,31 @@ class PagedQueryTest(GAETestCase):
 		self.pagedQuery.ancestor(self.kate)
 		self.assertTrue(self.pagedQuery._page_cursors == [None])
 		
-
+	def test_offset_doesnt_error_or_count(self):
+		'''Tests whether removal of page_count from offset queries
+		actually works (does not error) and that a page_count is not
+		triggered'''
+		
+		#db.Query
+		self.assertTrue(self.pagedQuery._num_count_calls == 0)
+		persons = self.pagedQuery.fetch(2)
+		self.assertTrue(self.pagedQuery._num_count_calls == 0)
+		
+		self.pagedQuery = self.util_create_persons_pagedQuery()
+		self.assertTrue(self.pagedQuery._num_count_calls == 0)
+		persons = self.pagedQuery.fetch(10)
+		self.assertTrue(self.pagedQuery._num_count_calls == 0)
+		
+		#db.GqlQuery
+		self.assertTrue(self.pagedGqlQuery._num_count_calls == 0)
+		persons = self.pagedGqlQuery.fetch(2)
+		self.assertTrue(self.pagedGqlQuery._num_count_calls == 0)
+		
+		self.pagedGqlQuery = self.util_create_persons_GQL_pagedQuery()
+		self.assertTrue(self.pagedGqlQuery._num_count_calls == 0)
+		persons = self.pagedGqlQuery.fetch(10)
+		self.assertTrue(self.pagedGqlQuery._num_count_calls == 0)
+		
 					
 	def test_page_count(self):
 		'''Tests that the page_count() method works as expected'''
@@ -471,8 +498,6 @@ class PagedQueryTest(GAETestCase):
 		
 		count_persist_1 = self.pagedQuery._num_persist
 		count_restore_1 = self.pagedQuery._num_restore
-		
-		logging.info((count_persist_1, count_restore_1))
 		
 		self.assertTrue(count_restore_1 == 0)
 		self.assertTrue(count_persist_1 == 3)
@@ -712,9 +737,7 @@ class PagedQueryTest(GAETestCase):
 		
 		#Test for page 1 - page count should be called
 		page_count = self.pagedQuery._num_count_calls
-		logging.info(page_count)
 		hp1 = self.pagedQuery.has_page(1)
-		logging.info(self.pagedQuery._num_count_calls)
 		self.assertTrue(page_count + 1 == self.pagedQuery._num_count_calls)
 		
 		#Test after fetching page 3 - page count should not be called for
@@ -877,8 +900,7 @@ class PageLinksTest(GAETestCase):
 		#test with default size
 		pageLinks = PageLinks(1,1,'/blah', 'page')
 		
-		myLinks = pageLinks.get_links()
-		logging.info(myLinks)		
+		myLinks = pageLinks.get_links()	
 		self.assertTrue(len(myLinks) == 1) 
 		
 		#test with custom size
