@@ -220,30 +220,36 @@ class PrefetchingQueryTest(GAETestCase):
 		
 		#run normal test
 		PostTopicTestEntity.number_of_inits = 0
-		PersonTestEntity.number_of_inits = 0
+		UserTestEntity.number_of_inits = 0
 		
 		normals = normalQuery.fetch(100)
 		authors = [post.parent().name for post in normals]
 		topics = [post.topic.topic_name for post in normals if post.topic]
 		
 		normal_topic_inits = PostTopicTestEntity.number_of_inits
-		normal_parent_inits = PersonTestEntity.number_of_inits
+		normal_parent_inits = UserTestEntity.number_of_inits
 		
 		#run prefetched case
 		PostTopicTestEntity.number_of_inits = 0
-		PersonTestEntity.number_of_inits = 0
+		UserTestEntity.number_of_inits = 0
 		
 		normals = pfQuery.fetch(100)
 		authors = [post.parent().name for post in normals]
 		topics = [post.topic.topic_name for post in normals if post.topic]
 	
 		prefetched_topic_inits = PostTopicTestEntity.number_of_inits
-		prefetched_parent_inits = PersonTestEntity.number_of_inits
+		prefetched_parent_inits = UserTestEntity.number_of_inits
 		
 		#compared the two numbers. A 'worthwhile' prefetching query will init
 		#fewer parents and topics
 		self.assertTrue(prefetched_topic_inits < normal_topic_inits)
 		self.assertTrue(prefetched_parent_inits < normal_parent_inits)
+		
+	def test_compatible_with_PagedQuery(self):
+		
+		from he3.db.tower.paging import PagedQuery
+		pq = PagedQuery(self.prefetchingQuery, 2)
+		post_page = pq.fetch_page(1)
 		
 	def util_create_posts_PrefetchingQuery(self):
 		'''Creates a new PrefetchingQuery object of bills posts based on 
@@ -264,7 +270,7 @@ class PrefetchingQueryTest(GAETestCase):
 		self.admin = SecurityRoleTestEntity(role_name = 'admin')
 		self.admin.put()
 		
-		self.bill = PersonTestEntity(name='bill', role=self.admin)
+		self.bill = UserTestEntity(name='bill', role=self.admin)
 		self.bill.put()
 		
 		self.topic1 = PostTopicTestEntity(parent=self.bill, topic_name="topic1")
@@ -306,7 +312,7 @@ class SecurityRoleTestEntity(db.Model):
 	
 	role_name = db.StringProperty(required=True)	
 	
-class PersonTestEntity(db.Model):
+class UserTestEntity(db.Model):
 	'''This is an entity to be used for testing purposes. It is intended to be
 	application agnostic'''
 	
@@ -314,7 +320,7 @@ class PersonTestEntity(db.Model):
 	
 	def __init__(self, parent=None, key_name=None, _app=None, _from_entity=False
 				,**kwds):
-		PersonTestEntity.number_of_inits += 1
+		UserTestEntity.number_of_inits += 1
 		db.Model.__init__(self, parent, key_name, _app,_from_entity, **kwds)	
 	
 	name = db.StringProperty(required=True)

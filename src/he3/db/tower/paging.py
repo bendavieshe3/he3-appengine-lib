@@ -120,8 +120,12 @@ class PagedQuery(object):
 		self._num_persist = 0
 		self._num_restore = 0
 		
-		if isinstance(query, db.Query): self._query_type = 'Query'
-		elif isinstance(query, db.GqlQuery): self._query_type = 'GqlQuery'
+		#find out if we are dealing with another facade object
+		if query.__dict__.has_key('_query'): query_to_check = query._query
+		else: query_to_check  = query
+								
+		if isinstance(query_to_check, db.Query): self._query_type = 'Query'
+		elif isinstance(query_to_check, db.GqlQuery): self._query_type = 'GqlQuery'
 		else: raise TypeError('Query type not supported: '\
 			 + type(query).__name__)
 		

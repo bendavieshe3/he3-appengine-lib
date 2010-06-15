@@ -83,6 +83,7 @@ class PrefetchingQuery(object):
 		'''
 		
 		self._query = query
+		
 		self._properties_to_prefetch = properties_to_prefetch
 		
 		if isinstance(query, db.Query): self._query_type = 'Query'
@@ -188,6 +189,28 @@ class PrefetchingQuery(object):
 		@return: Returns the number of result this query fetches
 		'''
 		return self._query.count(limit)		
+
+	def with_cursor(self, cursor):
+		'''Sets a cursors to use for fetches. This method should behave 
+		identically to the one existing on db.Query and db.GqlQuery objects.
+		
+		@see: http://code.google.com/appengine/docs/python/datastore/queryclass.html
+		
+		@param cursor: Cursor to set.
+		@return: None
+		'''
+		return self._query.with_cursor(cursor)
+			
+	def cursor(self):
+		'''Returns a cursor pointing to the result after the last result fetched.
+		This method should behave identically to the one existing on db.Query 
+		and db.GqlQuery objects.
+		
+		@see: http://code.google.com/appengine/docs/python/datastore/queryclass.html
+
+		@return: base-64 encoded string cursor
+		'''
+		return self._query.cursor()
 
 	def _check_query_type_is(self, required_query_type):
 		'''This is a helper method to assert that the query the DereferencedQuery
