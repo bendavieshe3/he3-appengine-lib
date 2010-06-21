@@ -210,6 +210,19 @@ class PrefetchingQueryTest(GAETestCase):
 		self.assertTrue(len(PrefetchingQuery._get_properties_defined_in_class(self.admin))
 					== 1)
 		
+	def test_behaviour_with_bad_reference_keys(self):
+		'''Tests the behaviour of the prefetching queries where model integrity
+		is not assured. '''
+		#test1 - should succeed and return 6 results
+		posts = self.prefetchingQuery.fetch(limit=10)
+		self.assertTrue(len(posts)==4)
+		
+		#test 2, delete a topic, and then re-run
+		self.topic1.delete()
+		posts = self.prefetchingQuery.fetch(limit=10)
+		self.assertTrue(len(posts)==4)
+		
+		
 	def test_is_worthwhile(self):
 		'''Tests that PrefetchingQuery actually saves db.get() calls'''
 		

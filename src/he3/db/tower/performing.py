@@ -250,18 +250,33 @@ class PrefetchingQuery(object):
 			(impacts optional properties)
 		2. used a technique by Ubaldo Huerta to include parent keys
 			see http://groups.google.com/group/google-appengine-python/msg/22c2010a8f102f32
+		3. Filtered none values from the set of referential entities returned
+			from db.Get(). Skip populating those fields where an entity was not
+			returned. If an application does not clean up dangling references
+			this would otherwise cause errors at 'x.key()' 
 		'''
 		fields = [(entity, prop) for entity in entities for prop 
 				in props]
 		ref_keys = [x.key().parent() if prop == 'parent' else 
 				prop.get_value_for_datastore(x) for x, prop in fields]
-		ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)-set((None,))))		
+
+		ref_entities = dict((x.key(), x) for x in db.get(set(ref_keys)-set((None,)))
+						if x is not None)
 		for (entity, prop), ref_key in zip(fields, ref_keys): 
-			if prop == 'parent': 
-				# Big warning ! Using internals of Model (might	break in the future)
-				if ref_key:entity._parent = ref_entities[ref_key] 
+			if ref_entities.has_key(ref_key):
+				if prop == 'parent': 
+					# Big warning ! Using internals of Model (might	break in the future)
+					if ref_key:entity._parent = ref_entities[ref_key] 
+				else:
+					if ref_key:prop.__set__(entity, ref_entities[ref_key])
 			else:
-				if ref_key:prop.__set__(entity, ref_entities[ref_key]) 
+				#We couldn't retrieve a referential entity for the current 
+				#entity,prop pair. This can happen if a App Engine application
+				#deleted entities without cleaning up the entities that reference
+				#them. This why simply testing referential entities on retrieval,
+				#without purposefully cleaning up dangling references, sucks.
+				#</rant>
+				pass 
 		return entities
 	
 	@staticmethod
