@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Home</h2>
+
+  <div>
+    <p>This is a test of the Open-ID support within Google App Engine.</p>
+
+    {% if user %}
+    <ul>
+      <li>You are logged in as {{user.nickname}}.</li>
+      <li>Your email address is {{user.email}}.</li>
+    </ul>
+      <h3>Messages</h3>
+      {% if messages %}
+        <p>There are the following messages:</p>
+      
+        <ul>
+          {% for m in messages %}
+          <li>{{m.message}} <span class="attribution">by {{m.user.email}}({{m.user.key.id}})</span></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>There are no messages.</p>
+      {% endif %}
+      <form method="post" action="/messages">
+        <p><label for="new_message">Add a message:</label></p>
+        <p><textarea name="message" id="new_message" rows="5" 
+          placeholder="Write a new message here"
+          style="width:90%"></textarea></p>
+        <p><input type="submit" value="Post Message"></p>  
+      </form>
+    {% else %}
+      <p>You are not currently logged in.</p>
+    {% endif %}
+    <p><a href="/secure">This page</a> is 'secure' and will prompt for login.</p>
+  </div>
+{% endblock %}

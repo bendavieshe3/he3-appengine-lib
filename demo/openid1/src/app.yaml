@@ -1,0 +1,24 @@
+application: he3-openidtest
+version: 1
+runtime: python
+api_version: 1
+
+default_expiration: "1d"
+
+handlers:
+
+- url: /style
+  static_dir: static/style  
+  
+- url: /secure
+  script: main.py
+  login: required  
+  
+- url: .*
+  script: main.py
+
+builtins:
+- admin_redirect: on
+- appstats: on
+- remote_api: on
+#- datastore_admin: on

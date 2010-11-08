@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+
+  <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame 
+       Remove this if you use the .htaccess -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+  <title>Open ID Test</title>
+  <meta name="description" content="" />
+  <meta name="generator" content="Studio 3 http://aptana.com/" />
+  <meta name="author" content="Ben Davies" />
+
+  <meta name="viewport" content="width=device-width; initial-scale=1.0" />
+
+  <!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link href="/style/screen.css" rel="stylesheet" type="text/css" />
+  
+</head>
+
+<body>
+  <div>
+    <header>
+      <h1>Open ID Test</h1>
+    </header>
+    <div id="content-wrap">
+    <nav>
+      <p><a href="/">Home</a></p>
+      {% if user %}
+      <p><a href="/logout">Logout</a></p>
+
+      {% else %}
+      <p>Login using:</p>
+      {% for p in open_id_providers %}
+        <p><a href="/login?provider={{p.1}}">{{p.0}}</a></p>
+      {% endfor %}
+      <form method="get" action="/login">
+        <p>
+          <input type="text" name="provider" placeholder="Your OpenId"
+          style="width:6em">
+        </p>
+      </form>
+      {% endif %}
+    </nav>
+
+    <div id="content">
+      {% if system_message %}
+        <p class="systemMessage">{{system_message}}</p>
+      {% endif %}
+
+      {% block content %}
+      
+      
+      {% endblock %}
+    </div>
+
+    <footer>
+     <p><a href="http://www.learningtechnicalstuff.com">Learning Technical Stuff</a></p>
+    </footer>
+  </div>
+</body>
+</html>
