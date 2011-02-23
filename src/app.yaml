@@ -1,9 +1,9 @@
 application: he3-lib
-version: rel001
+version: to-be-replaced
 runtime: python
 api_version: 1
 
 handlers:
 
 - url: /test.*
-  script: gaeunit.py
+  script: /test/support/gaeunit.py

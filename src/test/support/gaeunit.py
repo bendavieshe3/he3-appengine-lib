@@ -50,11 +50,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ------------------------------------------------------------------------------
 '''
-
 __author__ = "George Lei and Steven R. Farley"
 __email__ = "George.Z.Lei@Gmail.com"
 __version__ = "#Revision: 1.2.8 $"[11:-2]
-__copyright__= "Copyright (c) 2008-2009, George Lei and Steven R. Farley"
+__copyright__ = "Copyright (c) 2008-2009, George Lei and Steven R. Farley"
 __license__ = "BSD"
 __url__ = "http://code.google.com/p/gaeunit"
 
@@ -67,15 +66,21 @@ import cgi
 import re
 import django.utils.simplejson
 
+# ADDED FOR He3-App-Engine-lib
+# Add lib,support to System Path for External Libraries
+# This needs to proceed the import of dependent libraries
+if 'lib' not in sys.path:
+    sys.path[0:0] = ['lib','test/support']
+
 from xml.sax.saxutils import unescape
 from google.appengine.ext import webapp
 from google.appengine.api import apiproxy_stub_map  
 from google.appengine.api import datastore_file_stub
 from google.appengine.ext.webapp.util import run_wsgi_app
 
-_LOCAL_TEST_DIR = 'test'  # location of files
+_LOCAL_TEST_DIR = 'test/unit'  # location of files
 _WEB_TEST_DIR = '/test'   # how you want to refer to tests on your web server
-_LOCAL_DJANGO_TEST_DIR = '../../gaeunit/test'
+_LOCAL_DJANGO_TEST_DIR = '../../gaeunit/test/unit'
 
 # or:
 # _WEB_TEST_DIR = '/u/test'
@@ -590,6 +595,11 @@ _MAIN_PAGE_CONTENT = """
 ##############################################################################
 # Script setup and execution
 ##############################################################################
+
+# Add lib,support to System Path for External Libraries
+# This needs to proceed the import of dependent libraries
+if 'lib' not in sys.path:
+    sys.path[0:0] = ['lib','test/support']
 
 
 application = webapp.WSGIApplication([('%s'      % _WEB_TEST_DIR, MainTestPageHandler),
