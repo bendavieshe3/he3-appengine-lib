@@ -69,8 +69,7 @@ import django.utils.simplejson
 # ADDED FOR He3-App-Engine-lib
 # Add lib,support to System Path for External Libraries
 # This needs to proceed the import of dependent libraries
-if 'lib' not in sys.path:
-    sys.path[0:0] = ['lib','test/support']
+sys.path[0:0] = ['lib','test/support']
 
 from xml.sax.saxutils import unescape
 from google.appengine.ext import webapp
