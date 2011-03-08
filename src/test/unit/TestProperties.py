@@ -3,7 +3,6 @@ Unit Tests for the he3.db.properties package
 '''
 
 import logging
-from datetime import date
 
 import google.appengine.ext.db as db
 from google.appengine.api import datastore_errors
@@ -12,7 +11,7 @@ from gaeunit import GAETestCase
 from he3.db.properties.date import UtcDateTimeProperty
 from he3.db.properties.reference import ReferenceListProperty
 
-
+#pylint:disable=R0904
 
 class UtcDateTimePropertyTest(GAETestCase):
     '''
@@ -53,10 +52,11 @@ class ReferenceListPropertyTest(GAETestCase):
         #try after putting
         
         titan = Computer.get(titan.put())
+        #pylint:disable=E1103
         self.assertTrue(len(titan.parts) == 0, 'final length of property is '
                         'not zero')        
             
-    def test_adding_model(self):
+    def test_adding_model(self):    #pylint:disable=R0201
         '''
         Tests adding a model to the ReferencePropertyList.
         We expect normal list syntax to work. 
@@ -85,6 +85,46 @@ class ReferenceListPropertyTest(GAETestCase):
         #try persisting
         self.assertRaises(datastore_errors.BadValueError, titan.put)
                 
+    def test_retrieving_model(self):
+        '''test retrieving model entities from the ReferenceListProperty'''
+        
+        titan = Computer(name='titan')
+        printer = Peripheral(name='printer')
+        
+        printer.put()
+        
+        
+        titan.parts.append(printer)
+        printer2 = titan.parts[0]
+        
+        self.assertTrue(printer.key() == printer2.key())
+        
+        titan2 = Computer.get(titan.put())
+        
+        printer3 = titan2.parts[0]
+        
+        self.assertTrue(printer.key() == printer3.key())
+        
+    def test_multiple_reference_items_and_order(self):
+        
+        titan = Computer(name='titan')
+        printer = Peripheral(name='printer')
+        mouse = Peripheral(name='mouse')
+        monitor = Peripheral(name='monitor')
+        
+        printer.put()
+        mouse.put()
+        monitor.put()
+        
+        titan.parts = [printer, mouse, monitor]
+        parts_names = [e.name for e in titan.parts]
+        titan.put()
+        
+        titan = Computer.get(titan.key())
+        
+        self.assertEquals(parts_names, [e.name for e in titan.parts])
+        
+        
         
         
         

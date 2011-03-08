@@ -6,9 +6,7 @@ from google.appengine.ext import db
 from google.appengine.api import datastore_errors
 from google.appengine.api import datastore
 
-import logging
-
-BadValueError = datastore_errors.BadValueError
+BadValueError = datastore_errors.BadValueError #pylint:disable=C0103
 
 class ReferenceListProperty(db.ListProperty):
     '''
@@ -17,7 +15,17 @@ class ReferenceListProperty(db.ListProperty):
     ReferenceListProperty as a list.
     
     ReferenceListProperty, like the ReferenceProperty, creates a corresponding
-    collection on the side of the referenced entity.
+    collection on the side of the referenced entity
+    
+    
+    CURRENT STATUS
+    At time of writing
+    - Reverse Collection Property is not being created
+    - Referenced entities are always retrieved from the datastore. This should
+        be replaced by model-instance caching and possibly even lazy loading so
+        individual list members can be instanced as required.
+    
+    
     '''
 
     def __init__(self, reference_class=None, verbose_name=None, 
@@ -48,27 +56,21 @@ class ReferenceListProperty(db.ListProperty):
             raise db.KindError('reference_class must be db.Model')
         self.reference_class = self.data_type = reference_class
 
-    def validate(self,value):
+    def validate(self, value):
         '''
         Validate the ReferenceListProperty values as a list of model instance
         of class reference class that have been saved.
-        
-        Returns:
-            a valid value
-        
-        Raises: 
-            BadValueError if all members of the list are not saved, if any
-            members are not of reference_class or if not contained in a 
-            list.
+
         '''
- 
-        #check required, choices, user validator
+
         if value is not None:
             if not isinstance(value, list):
-                raise datastore_errors.BadValueError('Property %s must be a list' % self.name)
+                raise datastore_errors.BadValueError(
+                    'Property %s must be a list' % self.name)
             
             value = self.validate_list_contents(value)
-        
+            
+            #check required, choices, user validator
             value = super(ReferenceListProperty, self).validate(value)
         
         return value
@@ -89,10 +91,24 @@ class ReferenceListProperty(db.ListProperty):
                     '%s instance must have a complete key before it can be '
                     'stored as a reference' % self.reference_class.kind())
             
-            logging.info(member)
-            
-            if not member is isinstance(member, self.reference_class):
+            if not isinstance(member, self.reference_class):
                 raise db.KindError('All members of %s must be an instance of %s'
                                    % (self.name, self.reference_class.kind())) 
                 
         return value
+
+    def get_value_for_datastore(self, model_instance):
+        '''
+        Returns a list of keys for storage in the datastore
+        '''
+        entity_list = self.validate_list_contents(
+            self.__get__(model_instance, self.reference_class))
+
+        return [e.key() for e in entity_list if e]
+    
+    def make_value_from_datastore(self, value):
+        '''
+        Returns a populated list of entity models
+        '''
+        return db.get(value);
+
