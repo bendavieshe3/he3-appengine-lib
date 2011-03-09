@@ -6,6 +6,8 @@ from google.appengine.ext import db
 from google.appengine.api import datastore_errors
 from google.appengine.api import datastore
 
+import logging
+
 BadValueError = datastore_errors.BadValueError #pylint:disable=C0103
 
 class ReferenceListProperty(db.ListProperty):
@@ -20,7 +22,6 @@ class ReferenceListProperty(db.ListProperty):
     
     CURRENT STATUS
     At time of writing
-    - Reverse Collection Property is not being created
     - Referenced entities are always retrieved from the datastore. This should
         be replaced by model-instance caching and possibly even lazy loading so
         individual list members can be instanced as required.
@@ -37,7 +38,7 @@ class ReferenceListProperty(db.ListProperty):
             reference_class is a db.model class to create a list of references
                 of. As per ReferenceProperty
             verbose_name is a human readable name
-            collection_name is the name of the query exposed on the 1st part 
+            collection_name is the name of the query exposed on the 1st party 
                 model object
             reverse_collection_name is the name of query attributes on the 
                 reference class model object.
@@ -99,7 +100,7 @@ class ReferenceListProperty(db.ListProperty):
                                                     self.collection_name))                
         #create and attach forward collection
         setattr(self.model_class, self.collection_name,
-                db._ReverseReferenceProperty(self.reference_class, property_name))        
+                _ForwardReferenceProperty(self.reference_class, property_name))        
         
         
         
@@ -185,3 +186,23 @@ class ReferenceListProperty(db.ListProperty):
         '''
         return db.get(value);
 
+class _ForwardReferenceProperty(db._ReverseReferenceProperty):
+    ''' 
+    A variation on the _reverseReferenceProperty to change the returned
+    query to be effective for 1st party collections
+    '''
+
+    def __get__(self, model_instance, model_class):
+        '''
+        Return a query which will fetch the members specified in the
+        ReferenceListProperty
+        ''' 
+        if model_instance is not None:
+            logging.info(self._ReverseReferenceProperty__model)
+            query = db.Query(self._ReverseReferenceProperty__model)
+            logging.info('here')
+            keys = [reference_item.key() for reference_item in 
+                    getattr(model_instance, self._ReverseReferenceProperty__property)]
+            return query.filter('__key__ IN ', keys)            
+        else:
+            return self
