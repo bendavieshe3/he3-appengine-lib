@@ -29,15 +29,18 @@ class ReferenceListProperty(db.ListProperty):
     '''
 
     def __init__(self, reference_class=None, verbose_name=None, 
-                 collection_name=None, **attrs):
+                 collection_name=None, reverse_collection_name=None, **attrs):
         '''
         Construct ReferenceListProperty
         
         args:
             reference_class is a db.model class to create a list of references
-            of. As per ReferenceProperty
+                of. As per ReferenceProperty
             verbose_name is a human readable name
-            collection_name is not used (yet!)
+            collection_name is the name of the query exposed on the 1st part 
+                model object
+            reverse_collection_name is the name of query attributes on the 
+                reference class model object.
         
         raises:
             KindError if the reference class is not a db.model object
@@ -48,6 +51,7 @@ class ReferenceListProperty(db.ListProperty):
                                                     **attrs)
     
         self.collection_name = collection_name
+        self.reverse_collection_name = reverse_collection_name
     
         if reference_class is None:
             reference_class = db.Model
@@ -55,6 +59,75 @@ class ReferenceListProperty(db.ListProperty):
                 issubclass(reference_class, db.Model)):
             raise db.KindError('reference_class must be db.Model')
         self.reference_class = self.data_type = reference_class
+
+
+    def __property_config__(self, model_class, property_name):
+        '''
+        Adds the normal and reverse collections to the model
+        
+        
+        Args:
+        model_class: Model class which will have its reference properties
+        initialized.
+        property_name: Name of property being configured.
+        
+        Raises:
+        DuplicatePropertyError if referenced class already has the provided
+        collection name as a property.
+        '''
+
+        super(ReferenceListProperty, self).__property_config__(model_class,
+                                                               property_name)
+                
+        #set up (forward) collection
+        if self.collection_name is None:
+            self.collection_name = '%s_set' % (
+                                    self.reference_class.__name__.lower())     
+        
+        existing_prop = getattr(self.model_class,
+                                self.collection_name, None)
+        
+        if existing_prop is not None:
+            
+            if not(isinstance(existing_prop, db._ReverseReferenceProperty) and
+                   existing_prop._prop_name == property_name and
+                   existing_prop._model.__name__ == self.reference_class.__name__ and
+                   existing_prop._model.__module__ == self.reference_class.__module__):
+                raise db.DuplicatePropertyError( 
+                    'Class %s already has property %s ' % (
+                                                    self.model_class.__name__, 
+                                                    self.collection_name))                
+        #create and attach forward collection
+        setattr(self.model_class, self.collection_name,
+                db._ReverseReferenceProperty(self.reference_class, property_name))        
+        
+        
+        
+        #Set up Reverse Collection
+        if self.reverse_collection_name is None:
+            self.reverse_collection_name = '%s_set' % (
+                                            model_class.__name__.lower())
+        
+        
+        
+        #check for duplicate reverse_collection_name
+        existing_prop = getattr(self.reference_class, 
+                                self.reverse_collection_name, None)
+        if existing_prop is not None:
+            
+            if not (isinstance(existing_prop, db._ReverseReferenceProperty) and
+                    existing_prop._prop_name == property_name and
+                    existing_prop._model.__name__ == model_class.__name__ and
+                    existing_prop._model.__module__ == model_class.__module__):
+                raise db.DuplicatePropertyError(
+                    'Class %s already has property %s '
+                    % (self.reference_class.__name__, 
+                       self.reverse_collection_name))
+                
+        #create and attach reverse collection
+        setattr(self.reference_class, self.reverse_collection_name,
+                db._ReverseReferenceProperty(model_class, property_name))
+        
 
     def validate(self, value):
         '''

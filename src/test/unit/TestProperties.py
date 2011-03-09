@@ -124,8 +124,49 @@ class ReferenceListPropertyTest(GAETestCase):
         
         self.assertEquals(parts_names, [e.name for e in titan.parts])
         
+    def test_forward_relationship(self):
+        '''
+        tests the query exposed for traversing between the host and reference
+        class
+        '''
+        titan = Computer(name='titan')
+        printer = Peripheral(name='printer')
+        mouse = Peripheral(name='mouse')
+        monitor = Peripheral(name='monitor')
+        
+        printer.put()
+        mouse.put()
+        monitor.put()
+        
+        titan.parts = [printer, mouse, monitor]
+        titan.put()
+        
+        parts = titan.parts_query.fetch(10)
+        self.assertTrue(len(parts)==3, 'unexpected number of results (%s)'
+                        % len(parts))
         
         
+    def test_reverse_relationship(self):
+        '''Test that property creates a reverse relationship like Reference 
+        property'''
+        
+        titan = Computer(name='titan')
+        printer = Peripheral(name='printer')
+        mouse = Peripheral(name='mouse')
+        monitor = Peripheral(name='monitor')
+        
+        printer.put()
+        mouse.put()
+        monitor.put()
+        
+        titan.parts = [printer, mouse, monitor]
+        titan.put()
+        
+        printer = Peripheral.get(printer.key())
+        
+        computers = printer.computers.fetch(10)
+        
+        self.assertTrue(len(computers)==1, 'Unexpected result')
         
         
             
@@ -161,4 +202,6 @@ class Computer(db.Model):
     
     name = db.StringProperty(required=True)
     parts = ReferenceListProperty(reference_class=Peripheral, verbose_name=None,
+                                  collection_name='parts_query', 
+                                  reverse_collection_name='computers', 
                                   default=None)
