@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="he3-appengine-lib" default="build">
+	
+  <!-- Properties -->
+  <property name="path.assets.src" location="./src" />
+	
+  <property name="path.assets.etc" location="./etc" />
+  <property name="path.assets.etc.pylint" location="${path.assets.etc}/pylint.rc" />
+
+  <property name="path.assets.test" location="./test" />
+  <property name="path.assets.gae.appcfg" location="/cross/gae/google_appengine/1.4.2/appcfg.py" />
+	
+  <property name="path.build.src" location="./build/upload" />
+  <property name="path.build.reports" location="./build/reports" />
+  <property name="path.build.reports.pylint.out" location="${path.build.reports}/pylint_output.txt" />
+  <property name="path.build.reports.pylint.err" location="${path.build.reports}/pylint_errors.txt" />
+	
+  <property name="path.dist.src" location="./dist/upload" />	
+  	
+  <property file="${path.assets.etc}/google.properties" />
+
+  <property name="token.git.uptodate" value="nothing to commit (working" />
+	
+  <!-- Public Targets -->
+  <target name="build" depends="-init,-setbuildonlyprops,-copybuild,-copydist"
+	description="completes entire build process, with the exception of deployment">
+  	<!-- TODO: Minify CSS -->
+  </target>
+
+  <target name="test" depends="unittest,sourcetest"
+	description="runs all available tests on the application" />
+	
+  <target name="unittest" depends=""
+    description="executes defined unit tests on working (not build)">
+    <echo>Not implemented yet</echo>
+  </target>
+	
+  <target name="sourcetest" depends="-init,-pylint"
+  	description="executes code quality checks on original source code">
+
+  </target>
+  
+  <target name="deploytest" depends="-settestprops,clean,test,-failbuild,build,-uploadtest"
+    description="builds My Web Brain and deploys to Google as test version">
+  </target>
+
+  <target name="deployprod" depends="-setprodprops,clean,test,-failbuild,build,-uploadprod,-push"
+    description="builds My Web Brain and deploys to Google as test version">
+  </target>
+      	
+  <target name="clean" depends="-init"
+  	description="removes any working or intermediate files from the project">
+    <delete dir="${path.build.src}" />
+    <delete dir="${path.dist.src}" />
+    <delete>
+       <fileset dir="${path.assets.src}" includes="**/*.pyc" />
+       <fileset dir="${path.assets.src}" includes="**/*.pyo" />
+       <fileset dir="${path.assets.test}" includes="**/*.pyc" />
+       <fileset dir="${path.assets.test}" includes="**/*.pyo" />    
+    </delete>
+  </target>
+
+  <target name="showprops"
+	description="shows the values of properties set outside of tasks">
+	<echoproperties />	
+  </target>
+	
+  <!-- Private Targets -->
+  <target name="-init" depends="">
+  	<!-- initialises environment by ensuring directory structure is consistent
+  	and that required properties are set -->
+    
+	<!-- ensure directory structure is in place -->
+	<mkdir dir="${path.build.src}" />
+	<mkdir dir="${path.build.reports}" />
+    <mkdir dir="${path.dist.src}" />  
+  	
+	<!-- collect a timestamp id for use in any labels or tags -->
+  	<tstamp>
+  	  <format property="generated.id.timestamp" pattern="yyyyMMdd-HHmm" />
+  	</tstamp>
+  </target>
+	
+  <target name="-setprodprops">
+  	<!-- Which options will fail the build? -->
+	<property name="pylint.strict" value="false" />
+  </target>
+
+  <target name="-settestprops">
+	<property name="pylint.strict" value="false" />
+  </target>	
+	
+  <target name="-setbuildonlyprops">
+    <property name="pylint.strict" value="false" />
+  </target> 	
+	
+  <target name="-copybuild" depends="-init">
+	<!-- remove any build reports -->
+  	<delete>
+	  <fileset dir="${path.build.reports}" includes="*" />
+  	</delete>
+	
+  	<!-- copy build files -->
+    <copy todir="${path.build.src}">
+      <fileset dir="${path.assets.src}">
+      	<!-- TODO: move this to a separately defined patternset -->
+        <include name="**/*.py" />
+        <include name="**/*.yaml" />
+        <include name="**/*.js" />
+        <include name="**/*.gif" />
+        <include name="**/*.jpg" />
+      	<include name="**/*.ico" />
+        <include name="**/*.png" />
+      	<include name="**/*.xml" />
+      	<include name="**/robots.txt" />
+        <include name="**/zoneinfo.zip" />
+      </fileset>
+    </copy>
+	
+	<!-- Additional copy to replace version ids -->
+    <copy todir="${path.build.src}" overwrite="true">
+      <fileset dir="${path.assets.src}">
+        <include name="**/*.html" />
+        <include name="**/*.css" />
+      </fileset>
+	
+  	  <filterset begintoken="xx-" endtoken="-zz">
+        <filter token="replace-with-version-id" value="${generated.id.timestamp}" />
+      </filterset>
+    </copy>
+    
+  </target>
+	
+  <target name="-copydist" depends="-copybuild,-init">
+    <copy todir="${path.dist.src}">
+       <fileset dir="${path.build.src}" />
+    </copy>	
+  </target>
+
+  <target name="-failbuild" depends="-checkgitstatus,-pylint">
+  	  	
+  </target>
+	
+  <target name="-checkgitstatus">
+	<!-- Checks git status and sets a property if all changes committed -->
+  	<exec executable="git" outputproperty="output.git.status" failonerror="true">
+  		<arg value="status" />
+  	</exec>
+	<condition property="checks.git.uptodate">
+	  <contains string="${output.git.status}" substring="${token.git.uptodate}" />
+	</condition>
+	
+    <fail unless="checks.git.uptodate">
+       Git is not up to date:
+       ${output.git.status} 
+    </fail>	
+	
+  </target>
+	
+  <target name="-tag" if="checks.git.uptodate">
+    <!-- Creates a new tag in git -->
+    <exec executable="git" failonerror="true">
+       <arg value="tag" />
+       <arg value="-a" />
+	   <arg line="-m '${upload.desc}'" />
+	   <arg value="${upload.tag}" />
+    </exec>	
+  </target>
+	
+  <target name="-push" if="checks.git.uptodate">
+    <!-- Push to Origin Server -->
+    <exec executable="git" failonerror="true">
+       <arg value="push" />
+       <arg value="origin" />
+    </exec> 
+  	
+  	<!-- Push Tags to Origin Server -->
+    <exec executable="git" failonerror="true">
+       <arg value="push" />
+       <arg value="origin" />
+       <arg value="--tags" />
+    </exec> 
+  </target>
+	
+  <target name="-pylint">
+
+    <echo>Running Pylint Check...</echo>
+  	
+  	<property name="pylint.strict" value="false" />
+  	
+    <apply executable="pylint" parallel="true" failonerror="false"
+          addsourcefile="true"
+          output="${path.build.reports.pylint.out}"
+          error="${path.build.reports.pylint.err}"
+          resultProperty="pylint.result">
+       <arg line="--rcfile=${path.assets.etc.pylint}" />
+       <fileset dir="${path.assets.src}" includes="**/*.py" />
+    </apply>
+    
+    <loadfile property="pylint.output" srcFile="${path.build.reports.pylint.out}">
+      <filterchain>
+        <LineContainsRegExp> 
+          <regexp pattern="Your code has been rated"/>          
+        </LineContainsRegExp>
+      </filterchain>
+    </loadfile>
+    
+    <echo>${pylint.output}</echo>
+
+    <condition property="pylint.fail">
+      <and>
+        <isfailure code="${pylint.result}" />
+        <istrue value="${pylint.strict}" />
+      </and>
+    </condition>    
+    
+    <fail if="pylint.fail">
+      Build Failed because pylint returned ${pylint.result}
+Review Error file: ${path.build.reports.pylint.out}         
+    </fail> 
+    	
+	
+  </target>
+	
+
+	
+  <target name="-fail">
+	<!-- Fails the build process -->
+	<fail>Build intentionally failed by the fail target</fail>
+  </target>
+	
+  <!-- Uploading Private Targets -->
+  <target name="-uploadtest" depends="build,test,-prepuploadtest,-runupload,-tag">
+  </target>
+	
+  <target name="-uploadprod" depends="build,test,-prepuploadprod,-runupload,-tag">
+  </target>
+
+  <target name="-prepuploadtest" depends="">
+  	<property name="upload.version" value="test" />
+  	<property name="upload.tag" value="${generated.id.timestamp}-TEST" />
+	<property name="upload.desc" value="Release to Test environment" />
+  </target>
+
+  <target name="-prepuploadprod" depends="">
+    <property name="upload.version" value="prod" />
+	<property name="upload.tag" value="${generated.id.timestamp}-REL" />
+	<property name="upload.desc" value="Release to Production environment" />
+  </target>	
+	
+  <target name="-runupload" depends="-copydist"
+	description="(runs the upload. expects upload.version prop set.)"
+  	if="upload.version">
+    
+    <!-- Execute the upload -->
+    <exec executable="${path.assets.gae.appcfg}" failonerror="true"
+      inputString="${google.password}">
+      <!-- Options -->
+      <arg value="--no_cookies" />
+      <arg value="--version=${upload.version}" />
+      <arg value="--email=${google.email}" />
+      <arg value="--passin" />
+      <!-- Action -->
+      <arg value="update" />
+      <!-- App Directory -->
+      <arg value="${path.dist.src}" />
+    </exec>
+    
+    <echo>he3-appengine-lib Deployed to Application Version ${upload.version}</echo>
+    <echo>http://${upload.version}.latest.my-web-brain.appspot.com/</echo>   
+   	
+  </target>
+
+</project>

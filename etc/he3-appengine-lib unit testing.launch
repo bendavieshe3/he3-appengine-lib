@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.python.pydev.customizations.app_engine.launching.AppEngineLaunchConfigurationType">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS"/>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES"/>
+<listAttribute key="org.eclipse.debug.ui.favoriteGroups">
+<listEntry value="org.eclipse.debug.ui.launchGroup.run"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="/cross/gae/google_appengine/1.4.2/dev_appserver.py"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_OTHER_WORKING_DIRECTORY" value=""/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="--port=8081&#10;--datastore_path=${project_loc}/test/datastore/development.datastore&#10;--blobstore_path=${project_loc}/test/blobs/development.blobs&#10;${project_loc}/src"/>
+<stringAttribute key="org.python.pydev.debug.ATTR_INTERPRETER" value="Python 2.5"/>
+<stringAttribute key="org.python.pydev.debug.ATTR_PROJECT" value="he3-appengine-lib"/>
+</launchConfiguration>
