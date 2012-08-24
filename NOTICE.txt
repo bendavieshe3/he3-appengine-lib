@@ -1,0 +1,6 @@
+he3-AppEngine-Lib
+Copyright Ben Davies and Helium 3 IT Solutions Pty Ltd 2010-2012
+
+This project was developed exclusively by Ben Davies and Helium 3 IT Solutions. 
+
+No third-party code or intellectual property was used in He3-AppEngine-Lib.
